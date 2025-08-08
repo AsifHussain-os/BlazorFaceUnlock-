@@ -16,6 +16,7 @@ public class AuthService
     const string PasswordKey = "app_password_hash";
     const string BiometricKey = "app_biometric_enabled";
     const string SessionKey = "app_session_token";
+    private bool justLoggedOut = false;
 
     public async Task<bool> HasCredentialsAsync()
     {
@@ -87,11 +88,23 @@ public class AuthService
     public async Task SignInAsync()
     {
         await SecureStorage.SetAsync(SessionKey, Guid.NewGuid().ToString());
+        justLoggedOut = false;  // Reset flag on sign-in
     }
 
     public void SignOut()
     {
         SecureStorage.Remove(SessionKey);
+        justLoggedOut = true;  //  User Logged out
+    }
+
+    public bool IsJustLoggedOut()
+    {
+        return justLoggedOut;
+    }
+
+    public void ResetLogoutFlag()
+    {
+        justLoggedOut = false;
     }
 
     public async Task ClearCredentialsAsync()

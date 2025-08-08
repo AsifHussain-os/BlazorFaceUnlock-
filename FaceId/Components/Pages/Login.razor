@@ -61,6 +61,16 @@ else
             return;
         }
 
+        // Skip biometric auto-login immediately after logout
+        if (Auth.IsJustLoggedOut())
+        {
+            Auth.ResetLogoutFlag();
+            biometricAvailable = false;
+            isCheckingBiometrics = false;
+            return; // Show login form without biometric prompt
+        }
+
+
         biometricAvailable = await Auth.IsBiometricsEnabledAsync();
 
         if (biometricAvailable)
