@@ -30,5 +30,8 @@
 	<key>UIUserInterfaceStyle</key>
 	<string>Light</string>
 	
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires camera access to use  authentication</string>
+
 </dict>
 </plist>

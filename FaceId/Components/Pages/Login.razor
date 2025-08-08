@@ -1,0 +1,156 @@
+﻿@page "/login"
+@inject AuthService Auth
+@inject NavigationManager Nav
+@using FaceId.Services
+@using Plugin.Maui.Biometric
+
+@if (isCheckingBiometrics)
+{
+    <p>Checking biometric login...</p>
+}
+else
+{
+    <div>
+        <h3>Login</h3>
+
+        @if (!string.IsNullOrEmpty(loginMessage))
+        {
+            <p style="color:red;">@loginMessage</p>
+        }
+
+        @if (biometricAvailable)
+        {
+            <button @onclick="BiometricLogin">Login with Biometrics</button>
+        }
+
+        <hr />
+
+        <div>
+            <label>PIN</label><br />
+            <input @bind="pin" maxlength="6" />
+            <button @onclick="LoginWithPin">Login with PIN</button>
+        </div>
+
+        <div>
+            <label>Password</label><br />
+            <input type="password" @bind="password" />
+            <button @onclick="LoginWithPassword">Login with Password</button>
+        </div>
+
+        @if (showEnableBiometricPrompt)
+        {
+            <div style="margin-top:20px;">
+                <p>Do you want to enable biometric login for next time?</p>
+                <button @onclick="EnableBiometric">Yes, enable biometric login</button>
+                <button @onclick="SkipEnableBiometric">No, thanks</button>
+            </div>
+        }
+    </div>
+}
+
+@code {
+
+    private bool showEnableBiometricPrompt = false;
+    private bool biometricAvailable = false;
+    private bool isCheckingBiometrics = true; // <-- NEW loading flag
+    private string pin = "";
+    private string password = "";
+    private string loginMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        biometricAvailable = await Auth.IsBiometricsEnabledAsync();
+
+        if (biometricAvailable)
+        {
+            var success = await Auth.TryBiometricUnlockAsync();
+
+            if (success)
+            {
+                await Auth.SignInAsync();
+                Nav.NavigateTo("/"); // Navigate immediately on success
+                return; // Important: exit so UI doesn't show
+            }
+        }
+
+        // Biometric not available or failed, show login form
+        isCheckingBiometrics = false;
+    }
+
+    private async Task BiometricLogin()
+    {
+        var success = await Auth.TryBiometricUnlockAsync();
+        if (success)
+        {
+            await Auth.SignInAsync();
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            loginMessage = "Biometric authentication failed or canceled.";
+        }
+    }
+
+    private async Task LoginWithPin()
+    {
+        if (await Auth.ValidatePinAsync(pin))
+        {
+            await Auth.SignInAsync();
+
+            if (!await Auth.IsBiometricsEnabledAsync())
+            {
+                showEnableBiometricPrompt = true;
+            }
+            else
+            {
+                Nav.NavigateTo("/");
+            }
+        }
+        else
+        {
+            loginMessage = "Incorrect PIN.";
+        }
+    }
+
+    private async Task LoginWithPassword()
+    {
+        if (await Auth.ValidatePasswordAsync(password))
+        {
+            await Auth.SignInAsync();
+
+            if (!await Auth.IsBiometricsEnabledAsync())
+            {
+                showEnableBiometricPrompt = true;
+            }
+            else
+            {
+                Nav.NavigateTo("/");
+            }
+        }
+        else
+        {
+            loginMessage = "Incorrect password.";
+        }
+    }
+
+    private async Task EnableBiometric()
+    {
+        var bioSuccess = await Auth.TryBiometricUnlockAsync();
+        if (bioSuccess)
+        {
+            await Auth.EnableBiometricsAsync(true);
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            loginMessage = "Biometric setup failed. You can enable it later in settings.";
+            showEnableBiometricPrompt = false;
+        }
+    }
+
+    private void SkipEnableBiometric()
+    {
+        showEnableBiometricPrompt = false;
+        Nav.NavigateTo("/");
+    }
+}

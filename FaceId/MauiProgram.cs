@@ -17,6 +17,7 @@ public static class MauiProgram
         builder.Services.AddMauiBlazorWebView();
 
         // Use with Dependency Injection
+        builder.Services.AddSingleton<FaceId.Services.AuthService>();
         builder.Services.AddSingleton<IBiometric>(BiometricAuthenticationService.Default);
 
 #if DEBUG

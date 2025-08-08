@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@* @page "/"
 @using Plugin.Maui.Biometric
 @inject IJSRuntime JSRuntime
 
@@ -14,22 +14,18 @@ Welcome to your new app.
     private int count = 0;
     private string buttonText = "Click me";
 
-    // protected override void OnInitialized()
-    // {
-    //     base.OnInitialized();
-    //     buttonText = count == 1
-    //         ? $"Clicked {count} time"
-    //         : $"Clicked {count} times";
-    // }
-
     private async Task OnCounterClicked(MouseEventArgs e)
     {
+        var request = new AuthenticationRequest
+        {
+            Title = "Biometric verification required",
+            Subtitle = "Use Face or Fingerprint to continue",
+            Description = "We use biometrics to confirm your identity",
+            NegativeText = "Cancel"
+        };
+
         var result = await BiometricAuthenticationService.Default.AuthenticateAsync(
-            new AuthenticationRequest
-            {
-                Title = "Please authenticate to increment",
-                NegativeText = "Cancel authentication"
-            },
+            request,
             CancellationToken.None
         );
 
@@ -40,10 +36,71 @@ Welcome to your new app.
                 ? $"Clicked {count} time"
                 : $"Clicked {count} times";
         }
+        else if (result.Status == BiometricResponseStatus.Failure)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Authentication failed. Please try again.");
+        }
+    }
+} *@
+
+@page "/"
+@using FaceId.Services
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+@if (loading)
+{
+    <h3>Loading...</h3>
+}
+else
+{
+    <h1>Welcome to the App!</h1>
+    <p>You are logged in.</p>
+
+    <button @onclick="Logout">Logout</button>
+}
+
+@code {
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await Auth.IsSignedInAsync())
+        {
+            // Not signed in, so run your existing logic:
+
+            if (!await Auth.HasCredentialsAsync())
+            {
+                Nav.NavigateTo("/setaccount");
+                return;
+            }
+
+            if (await Auth.IsBiometricsEnabledAsync())
+            {
+                var success = await Auth.TryBiometricUnlockAsync();
+                if (success)
+                {
+                    await Auth.SignInAsync();
+                    loading = false; // show home UI
+                    StateHasChanged();
+                    return;
+                }
+            }
+
+            // Biometrics failed or disabled - redirect to login page
+            Nav.NavigateTo("/login");
+        }
         else
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Couldn't authenticate");
+            // Already signed in, just show the home UI
+            loading = false;
         }
     }
 
+
+    private void Logout()
+    {
+        Auth.SignOut();
+        Nav.NavigateTo("/login");
+    }
 }

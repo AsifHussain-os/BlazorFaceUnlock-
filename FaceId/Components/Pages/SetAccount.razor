@@ -1,0 +1,90 @@
+﻿@page "/setaccount"
+@using FaceId.Services
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+<div>
+
+    <h3>Set Up Your Account</h3>
+
+    <div>
+        <label>PIN (4-6 digits)</label><br />
+        <input @bind="pin" maxlength="6" />
+    </div>
+
+    <div>
+        <label>Password</label><br />
+        <input type="password" @bind="password" />
+    </div>
+
+    @if (biometricAvailable)
+    {
+        <div>
+            <label>
+                <input type="checkbox" @bind="enableBiometric" />
+                Enable biometric login (Face ID / Fingerprint)
+            </label>
+        </div>
+    }
+
+    <button @onclick="SaveAccount">Save & Continue</button>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <p style="color:red;">@message</p>
+    }
+
+</div>
+
+@code {
+    private string pin = "";
+    private string password = "";
+    private bool enableBiometric = false;
+    private bool biometricAvailable = false;
+    private string message = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            biometricAvailable = await Auth.IsBiometricsEnabledAsync();
+        }
+        catch
+        {
+            biometricAvailable = false;
+        }
+    }
+
+    private async Task SaveAccount()
+    {
+        if (string.IsNullOrWhiteSpace(pin) && string.IsNullOrWhiteSpace(password))
+        {
+            message = "Please set at least a PIN or a Password.";
+            return;
+        }
+
+        await Auth.SetCredentialsAsync(pin, password);
+
+        if (enableBiometric)
+        {
+            var bioSuccess = await Auth.TryBiometricUnlockAsync();
+            if (bioSuccess)
+            {
+                await Auth.EnableBiometricsAsync(true);
+            }
+            else
+            {
+                await Auth.EnableBiometricsAsync(false);
+                message = "Biometric setup failed. You can enable it later in settings.";
+                return;
+            }
+        }
+        else
+        {
+            await Auth.EnableBiometricsAsync(false);
+        }
+
+        await Auth.SignInAsync();
+        Nav.NavigateTo("/home", true);
+    }
+}
