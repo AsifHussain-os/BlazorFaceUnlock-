@@ -1,5 +1,49 @@
 ﻿@page "/"
+@using Plugin.Maui.Biometric
+@inject IJSRuntime JSRuntime
 
 <h1>Hello, world!</h1>
 
 Welcome to your new app.
+
+<button class="btn btn-primary" @onclick="OnCounterClicked">
+    @buttonText
+</button>
+
+@code {
+    private int count = 0;
+    private string buttonText = "Click me";
+
+    // protected override void OnInitialized()
+    // {
+    //     base.OnInitialized();
+    //     buttonText = count == 1
+    //         ? $"Clicked {count} time"
+    //         : $"Clicked {count} times";
+    // }
+
+    private async Task OnCounterClicked(MouseEventArgs e)
+    {
+        var result = await BiometricAuthenticationService.Default.AuthenticateAsync(
+            new AuthenticationRequest
+            {
+                Title = "Please authenticate to increment",
+                NegativeText = "Cancel authentication"
+            },
+            CancellationToken.None
+        );
+
+        if (result.Status == BiometricResponseStatus.Success)
+        {
+            count++;
+            buttonText = count == 1
+                ? $"Clicked {count} time"
+                : $"Clicked {count} times";
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Couldn't authenticate");
+        }
+    }
+
+}

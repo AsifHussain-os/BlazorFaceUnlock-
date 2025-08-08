@@ -25,8 +25,8 @@
     <string>Assets.xcassets/appicon.appiconset</string>
 	
 	<key>NSFaceIDUsageDescription</key>
-	<string>This app uses Face ID to unlock your account.</string>
-
+	<string>This app uses Face ID for secure authentication to protect your data</string>
+	
 	<key>UIUserInterfaceStyle</key>
 	<string>Light</string>
 	
