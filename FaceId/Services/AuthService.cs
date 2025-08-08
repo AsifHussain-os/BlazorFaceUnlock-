@@ -67,9 +67,9 @@ public class AuthService
             var result = await BiometricAuthenticationService.Default.AuthenticateAsync(
                 new AuthenticationRequest
                 {
-                    Title = "Unlock app",
-                    Subtitle = "Use Face or Fingerprint to continue",
-                    Description = "Look at the camera or use fingerprint to unlock",
+                    Title = "Unlock to Use My App — FaceId",
+                    //Subtitle = "Use fingerprint to continue",
+                    Description = "Place finger on sensor to unlock",
                     NegativeText = "Cancel"
                 },
                 CancellationToken.None
