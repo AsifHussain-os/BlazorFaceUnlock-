@@ -3,37 +3,40 @@
 @inject AuthService Auth
 @inject NavigationManager Nav
 
-<div>
+<div class="container">
 
-    <h3>Set Up Your Account</h3>
+    <h3 style="text-align: center; margin-bottom: 24px; color: #333;">Set Up Your Account</h3>
 
-    <div>
-        <label>PIN (4-6 digits)</label><br />
-        <input @bind="pin" maxlength="6" />
+    <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #555;">PIN (4-6 digits)</label>
+        <input 
+            @bind="pin" 
+            maxlength="6" 
+            style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;" 
+            placeholder="Enter your PIN" />
     </div>
 
-    <div>
-        <label>Password</label><br />
-        <input type="password" @bind="password" />
+    <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #555;">Password</label>
+        <input 
+            type="password" 
+            @bind="password" 
+            style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;" 
+            placeholder="Enter your password" />
     </div>
 
-    @if (biometricAvailable)
-    {
-        <div>
-            <label>
-                <input type="checkbox" @bind="enableBiometric" />
-                Enable biometric login (Face ID / Fingerprint)
-            </label>
-        </div>
-    }
-
-    <button @onclick="SaveAccount">Save & Continue</button>
+    <button 
+        @onclick="SaveAccount" 
+        style="width: 100%; padding: 12px; background-color: #4A90E2; border: none; border-radius: 4px; color: white; font-weight: 700; font-size: 16px; cursor: pointer;"
+        onmouseover="this.style.backgroundColor='#357ABD'"
+        onmouseout="this.style.backgroundColor='#4A90E2'">
+        Save & Continue
+    </button>
 
     @if (!string.IsNullOrEmpty(message))
     {
-        <p style="color:red;">@message</p>
+        <p style="margin-top: 20px; color: #E74C3C; font-weight: 600; text-align: center;">@message</p>
     }
-
 </div>
 
 @code {
@@ -65,26 +68,7 @@
 
         await Auth.SetCredentialsAsync(pin, password);
 
-        if (enableBiometric)
-        {
-            var bioSuccess = await Auth.TryBiometricUnlockAsync();
-            if (bioSuccess)
-            {
-                await Auth.EnableBiometricsAsync(true);
-            }
-            else
-            {
-                await Auth.EnableBiometricsAsync(false);
-                message = "Biometric setup failed. You can enable it later in settings.";
-                return;
-            }
-        }
-        else
-        {
-            await Auth.EnableBiometricsAsync(false);
-        }
-
         await Auth.SignInAsync();
-        Nav.NavigateTo("/home", true);
+        Nav.NavigateTo("/");
     }
 }

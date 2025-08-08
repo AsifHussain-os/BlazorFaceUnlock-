@@ -48,17 +48,26 @@ Welcome to your new app.
 @inject AuthService Auth
 @inject NavigationManager Nav
 
-@if (loading)
-{
-    <h3>Loading...</h3>
-}
-else
-{
-    <h1>Welcome to the App!</h1>
-    <p>You are logged in.</p>
 
-    <button @onclick="Logout">Logout</button>
-}
+<div class="container">
+
+    @if (loading)
+    {
+        <h3 style="color: #666;">Loading...</h3>
+    }
+    else
+    {
+        <h1 style="color: #333; margin-bottom: 10px;">Welcome to the FaceId App!</h1>
+        <span style="font-size: 18px; color: #555; display: block; margin-bottom: 30px;">You are logged in.</span>
+
+        <button @onclick="Logout"
+                style="padding: 12px 30px; background-color: #E74C3C; border: none; border-radius: 6px; color: white; font-weight: 600; font-size: 16px; cursor: pointer;"
+                onmouseover="this.style.backgroundColor='#C0392B'"
+                onmouseout="this.style.backgroundColor='#E74C3C'">
+            Logout
+        </button>
+    }
+</div>
 
 @code {
     private bool loading = true;

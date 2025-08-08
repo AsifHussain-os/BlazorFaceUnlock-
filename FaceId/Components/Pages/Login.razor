@@ -4,45 +4,47 @@
 @using FaceId.Services
 @using Plugin.Maui.Biometric
 
-@if (isCheckingBiometrics)
-{
-    <p>Checking biometric login...</p>
-}
-else
-{
-    <div>
-        <h3>Login</h3>
+
+
+<div class="container">
+
+    @if (isCheckingBiometrics)
+    {
+        <span style="text-align:center; color:#666;">Checking biometric login...</span>
+    }
+    else
+    {
+        <h3 style="text-align:center; color:#333; margin-bottom: 25px;">Login</h3>
 
         @if (!string.IsNullOrEmpty(loginMessage))
         {
-            <p style="color:red;">@loginMessage</p>
+            <span style="color:red; text-align:center; margin-bottom: 20px;">@loginMessage</span>
         }
 
+        <hr style="margin-bottom: 30px;" />
 
-        <hr />
-
-        <div>
-            <label>PIN</label><br />
-            <input @bind="pin" maxlength="6" />
-            <button @onclick="LoginWithPin">Login with PIN</button>
+        <div style="margin-bottom: 20px;">
+            <label style="font-weight: 600; color:#555;">PIN</label><br />
+            <input @bind="pin" maxlength="6" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;" />
+            <button @onclick="LoginWithPin" style="width: 100%; margin-top: 10px; padding: 12px; background-color: #3498db; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer;">
+                Login with PIN
+            </button>
         </div>
 
-        <div>
-            <label>Password</label><br />
-            <input type="password" @bind="password" />
-            <button @onclick="LoginWithPassword">Login with Password</button>
+        <div style="margin-bottom: 25px;">
+            <label style="font-weight: 600; color:#555;">Password</label><br />
+            <input type="password" @bind="password" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;" />
+            <button @onclick="LoginWithPassword" style="width: 100%; margin-top: 10px; padding: 12px; background-color: #2ecc71; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer;">
+                Login with Password
+            </button>
         </div>
 
-        @if (showEnableBiometricPrompt)
-        {
-            <div style="margin-top:20px;">
-                <p>Do you want to enable biometric login for next time?</p>
-                <button @onclick="EnableBiometric">Yes, enable biometric login</button>
-                <button @onclick="SkipEnableBiometric">No, thanks</button>
-            </div>
-        }
-    </div>
-}
+
+        <button @onclick="NavigateToSetAccount" style="margin-top: 15px; background: transparent; border: none; color: #3498db; cursor: pointer;">
+            Add Another Account
+        </button>
+    }
+</div>
 
 @code {
 
@@ -96,14 +98,7 @@ else
         {
             await Auth.SignInAsync();
 
-            if (!await Auth.IsBiometricsEnabledAsync())
-            {
-                showEnableBiometricPrompt = true;
-            }
-            else
-            {
-                Nav.NavigateTo("/");
-            }
+            Nav.NavigateTo("/");
         }
         else
         {
@@ -117,14 +112,7 @@ else
         {
             await Auth.SignInAsync();
 
-            if (!await Auth.IsBiometricsEnabledAsync())
-            {
-                showEnableBiometricPrompt = true;
-            }
-            else
-            {
-                Nav.NavigateTo("/");
-            }
+            Nav.NavigateTo("/");
         }
         else
         {
@@ -132,24 +120,8 @@ else
         }
     }
 
-    private async Task EnableBiometric()
+    void NavigateToSetAccount()
     {
-        var bioSuccess = await Auth.TryBiometricUnlockAsync();
-        if (bioSuccess)
-        {
-            await Auth.EnableBiometricsAsync(true);
-            Nav.NavigateTo("/");
-        }
-        else
-        {
-            loginMessage = "Biometric setup failed. You can enable it later in settings.";
-            showEnableBiometricPrompt = false;
-        }
-    }
-
-    private void SkipEnableBiometric()
-    {
-        showEnableBiometricPrompt = false;
-        Nav.NavigateTo("/");
+        Nav.NavigateTo("/setaccount");
     }
 }
