@@ -1,65 +1,24 @@
-﻿@* @page "/"
-@using Plugin.Maui.Biometric
-@inject IJSRuntime JSRuntime
-
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
-
-<button class="btn btn-primary" @onclick="OnCounterClicked">
-    @buttonText
-</button>
-
-@code {
-    private int count = 0;
-    private string buttonText = "Click me";
-
-    private async Task OnCounterClicked(MouseEventArgs e)
-    {
-        var request = new AuthenticationRequest
-        {
-            Title = "Biometric verification required",
-            Subtitle = "Use Face or Fingerprint to continue",
-            Description = "We use biometrics to confirm your identity",
-            NegativeText = "Cancel"
-        };
-
-        var result = await BiometricAuthenticationService.Default.AuthenticateAsync(
-            request,
-            CancellationToken.None
-        );
-
-        if (result.Status == BiometricResponseStatus.Success)
-        {
-            count++;
-            buttonText = count == 1
-                ? $"Clicked {count} time"
-                : $"Clicked {count} times";
-        }
-        else if (result.Status == BiometricResponseStatus.Failure)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "Authentication failed. Please try again.");
-        }
-    }
-} *@
-
-@page "/"
+﻿@page "/"
 @using FaceId.Services
 @inject AuthService Auth
 @inject NavigationManager Nav
 
-
 <div class="container">
-
     @if (loading)
     {
         <h3 style="color: #666;">Loading...</h3>
     }
-    else
+    else if (showContent)
     {
         <h1 style="color: #333; margin-bottom: 10px;">Welcome to the FaceId App!</h1>
-        <span style="font-size: 18px; color: #555; display: block; margin-bottom: 30px;">You are logged in.</span>
-
+        <span style="font-size: 18px; color: #555; display: block; margin-bottom: 30px;">You are authenticated and can use the app.</span>
+        
+        <!-- Your actual app content/dashboard goes here -->
+        <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
+            <h3 style="color: #333; margin-bottom: 10px;">Dashboard</h3>
+            <p style="color: #666;">This is secure app.</p>
+        </div>
+        
         <button @onclick="Logout"
                 style="padding: 12px 30px; background-color: #E74C3C; border: none; border-radius: 6px; color: white; font-weight: 600; font-size: 16px; cursor: pointer;"
                 onmouseover="this.style.backgroundColor='#C0392B'"
@@ -71,45 +30,37 @@ Welcome to your new app.
 
 @code {
     private bool loading = true;
+    private bool showContent = false;
 
     protected override async Task OnInitializedAsync()
     {
-        if (!await Auth.IsSignedInAsync())
+        // Check if user came from successful authentication
+        var uri = new Uri(Nav.Uri);
+        var justAuthenticated = uri.Query.Contains("authenticated=true");
+
+        if (justAuthenticated)
         {
-            // Not signed in, so run your existing logic:
-
-            if (!await Auth.HasCredentialsAsync())
-            {
-                Nav.NavigateTo("/setaccount");
-                return;
-            }
-
-            if (await Auth.IsBiometricsEnabledAsync())
-            {
-                var success = await Auth.TryBiometricUnlockAsync();
-                if (success)
-                {
-                    await Auth.SignInAsync();
-                    loading = false; // show home UI
-                    StateHasChanged();
-                    return;
-                }
-            }
-
-            // Biometrics failed or disabled - redirect to login page
-            Nav.NavigateTo("/login");
-        }
-        else
-        {
-            // Already signed in, just show the home UI
+            // User just authenticated, show the dashboard
             loading = false;
+            showContent = true;
+            return;
         }
-    }
 
+        // User accessed directly without authentication - redirect to appropriate page
+        if (!await Auth.HasCredentialsAsync())
+        {
+            // No credentials set up
+            Nav.NavigateTo("/setaccount");
+            return;
+        }
+        
+        // Credentials exist, but user must login every time (banking style)
+        Nav.NavigateTo("/login");
+    }
 
     private void Logout()
     {
-        Auth.SignOut();
+        Auth.SignOut(); // This does nothing in the simple version, but kept for consistency
         Nav.NavigateTo("/login");
     }
 }

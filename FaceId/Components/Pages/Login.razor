@@ -1,13 +1,9 @@
 ﻿@page "/login"
+@using FaceId.Services
 @inject AuthService Auth
 @inject NavigationManager Nav
-@using FaceId.Services
-@using Plugin.Maui.Biometric
-
-
 
 <div class="container">
-
     @if (isCheckingBiometrics)
     {
         <span style="text-align:center; color:#666;">Checking biometric login...</span>
@@ -38,90 +34,57 @@
                 Login with Password
             </button>
         </div>
-
-
-        <button @onclick="NavigateToSetAccount" style="margin-top: 15px; background: transparent; border: none; color: #3498db; cursor: pointer;">
-            Add Another Account
-        </button>
     }
 </div>
 
 @code {
-
-    private bool showEnableBiometricPrompt = false;
-    private bool biometricAvailable = false;
-    private bool isCheckingBiometrics = true; // <-- NEW loading flag
+    private bool isCheckingBiometrics = false;
     private string pin = "";
     private string password = "";
     private string loginMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
-        if (await Auth.IsSignedInAsync())
+        var biometricEnabled = await Auth.IsBiometricsEnabledAsync();
+        if (biometricEnabled)
         {
-            Nav.NavigateTo("/"); // already signed in, skip login
-            return;
+            await TryAutoBiometricLogin();
         }
-
-        // Skip biometric auto-login immediately after logout
-        if (Auth.IsJustLoggedOut())
-        {
-            Auth.ResetLogoutFlag();
-            biometricAvailable = false;
-            isCheckingBiometrics = false;
-            return; // Show login form without biometric prompt
-        }
-
-
-        biometricAvailable = await Auth.IsBiometricsEnabledAsync();
-
-        if (biometricAvailable)
-        {
-            var success = await Auth.TryBiometricUnlockAsync();
-
-            if (success)
-            {
-                await Auth.SignInAsync();
-                Nav.NavigateTo("/"); // Navigate immediately on success
-                return; // Important: exit so UI doesn't show
-            }
-        }
-
-        // Biometric not available or failed, show login form
-        isCheckingBiometrics = false;
     }
 
+    private async Task TryAutoBiometricLogin()
+    {
+        isCheckingBiometrics = true;
+        StateHasChanged();
+
+        var success = await Auth.TryBiometricUnlockAsync();
+
+        isCheckingBiometrics = false;
+
+        if (success)
+        {
+            Nav.NavigateTo("/?authenticated=true");
+        }
+        else
+        {
+            loginMessage = "Biometric authentication failed or cancelled.";
+            StateHasChanged();
+        }
+    }
 
     private async Task LoginWithPin()
     {
         if (await Auth.ValidatePinAsync(pin))
-        {
-            await Auth.SignInAsync();
-
-            Nav.NavigateTo("/");
-        }
+            Nav.NavigateTo("/?authenticated=true");
         else
-        {
             loginMessage = "Incorrect PIN.";
-        }
     }
 
     private async Task LoginWithPassword()
     {
         if (await Auth.ValidatePasswordAsync(password))
-        {
-            await Auth.SignInAsync();
-
-            Nav.NavigateTo("/");
-        }
+            Nav.NavigateTo("/?authenticated=true");
         else
-        {
             loginMessage = "Incorrect password.";
-        }
-    }
-
-    void NavigateToSetAccount()
-    {
-        Nav.NavigateTo("/setaccount");
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using FaceId.Services;
+using Microsoft.Extensions.Logging;
 using Plugin.Maui.Biometric;
 
 namespace FaceId;
@@ -17,7 +18,7 @@ public static class MauiProgram
         builder.Services.AddMauiBlazorWebView();
 
         // Use with Dependency Injection
-        builder.Services.AddSingleton<Services.AuthService>();
+        builder.Services.AddSingleton<AuthService>();
         builder.Services.AddSingleton<IBiometric>(BiometricAuthenticationService.Default);
 
 #if DEBUG

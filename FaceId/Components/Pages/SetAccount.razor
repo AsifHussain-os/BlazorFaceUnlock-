@@ -4,9 +4,7 @@
 @inject NavigationManager Nav
 
 <div class="container">
-
     <h3 style="text-align: center; margin-bottom: 24px; color: #333;">Set Up Your Account</h3>
-
     <div style="margin-bottom: 20px;">
         <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #555;">PIN (4-6 digits)</label>
         <input 
@@ -15,7 +13,6 @@
             style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;" 
             placeholder="Enter your PIN" />
     </div>
-
     <div style="margin-bottom: 20px;">
         <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #555;">Password</label>
         <input 
@@ -24,7 +21,17 @@
             style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;" 
             placeholder="Enter your password" />
     </div>
-
+    
+    @if (biometricAvailable)
+    {
+        <div style="margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; font-weight: 600; color: #555; cursor: pointer;">
+                <input type="checkbox" @bind="enableBiometric" style="margin-right: 8px;" />
+                Enable Face ID / Fingerprint Login
+            </label>
+        </div>
+    }
+    
     <button 
         @onclick="SaveAccount" 
         style="width: 100%; padding: 12px; background-color: #4A90E2; border: none; border-radius: 4px; color: white; font-weight: 700; font-size: 16px; cursor: pointer;"
@@ -32,7 +39,6 @@
         onmouseout="this.style.backgroundColor='#4A90E2'">
         Save & Continue
     </button>
-
     @if (!string.IsNullOrEmpty(message))
     {
         <p style="margin-top: 20px; color: #E74C3C; font-weight: 600; text-align: center;">@message</p>
@@ -50,7 +56,9 @@
     {
         try
         {
-            biometricAvailable = await Auth.IsBiometricsEnabledAsync();
+            // Simple check - try to create an auth request to see if biometrics work
+            // If the device doesn't support it, TryBiometricUnlockAsync will handle it gracefully
+            biometricAvailable = true; // We'll let the user try to enable it
         }
         catch
         {
@@ -66,9 +74,16 @@
             return;
         }
 
+        // Save credentials
         await Auth.SetCredentialsAsync(pin, password);
+        
+        // Enable biometrics if requested
+        if (enableBiometric && biometricAvailable)
+        {
+            await Auth.EnableBiometricsAsync(true);
+        }
 
-        await Auth.SignInAsync();
-        Nav.NavigateTo("/");
+        // Account setup complete - go to home page as authenticated
+        Nav.NavigateTo("/?authenticated=true");
     }
 }

@@ -1,5 +1,4 @@
-﻿
-// Services/AuthService.cs
+﻿// Services/AuthService.cs - Use This Simple Version
 using System;
 using System.Security.Cryptography;
 using System.Text;
@@ -15,8 +14,8 @@ public class AuthService
     const string PinKey = "app_pin_hash";
     const string PasswordKey = "app_password_hash";
     const string BiometricKey = "app_biometric_enabled";
-    const string SessionKey = "app_session_token";
-    private bool justLoggedOut = false;
+
+    // No session storage at all - user must authenticate every time
 
     public async Task<bool> HasCredentialsAsync()
     {
@@ -57,6 +56,7 @@ public class AuthService
 
     public async Task<bool> IsBiometricsEnabledAsync()
     {
+        // Just check if user enabled it in app settings
         var s = await SecureStorage.GetAsync(BiometricKey);
         return s == "true";
     }
@@ -64,7 +64,7 @@ public class AuthService
     public async Task<bool> TryBiometricUnlockAsync()
     {
         try
-        {          
+        {
             var result = await BiometricAuthenticationService.Default.AuthenticateAsync(
                 new AuthenticationRequest
                 {
@@ -75,36 +75,19 @@ public class AuthService
                 },
                 CancellationToken.None
             );
-
             return result.Status == BiometricResponseStatus.Success;
         }
         catch (Exception e)
         {
-            // biometric API may throw on some devices — treat as failure
             return false;
         }
     }
 
-    public async Task SignInAsync()
-    {
-        await SecureStorage.SetAsync(SessionKey, Guid.NewGuid().ToString());
-        justLoggedOut = false;  // Reset flag on sign-in
-    }
+    // No SignInAsync method - no sessions to create
 
     public void SignOut()
     {
-        SecureStorage.Remove(SessionKey);
-        justLoggedOut = true;  //  User Logged out
-    }
-
-    public bool IsJustLoggedOut()
-    {
-        return justLoggedOut;
-    }
-
-    public void ResetLogoutFlag()
-    {
-        justLoggedOut = false;
+        // Nothing to clear since there's no session
     }
 
     public async Task ClearCredentialsAsync()
@@ -112,13 +95,12 @@ public class AuthService
         SecureStorage.Remove(PinKey);
         SecureStorage.Remove(PasswordKey);
         SecureStorage.Remove(BiometricKey);
-        SecureStorage.Remove(SessionKey);
     }
 
-    public async Task<bool> IsSignedInAsync()
+    // Always return false - no persistent sessions
+    public Task<bool> IsSignedInAsync()
     {
-        var s = await SecureStorage.GetAsync(SessionKey);
-        return !string.IsNullOrEmpty(s);
+        return Task.FromResult(false);
     }
 
     private static string Hash(string input)
@@ -126,9 +108,6 @@ public class AuthService
         using var sha = SHA256.Create();
         var bytes = Encoding.UTF8.GetBytes(input);
         var hash = sha.ComputeHash(bytes);
-        // safe hex string:
         return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
     }
 }
-
-
