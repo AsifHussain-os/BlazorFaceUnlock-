@@ -1,4 +1,6 @@
-﻿namespace FaceId
+﻿using FaceId.Services;
+
+namespace FaceId
 {
     public partial class App : Application
     {
@@ -11,5 +13,12 @@
         {
             return new Window(new MainPage()) { Title = "FaceId" };
         }
+
+        protected override void OnResume()
+        {
+            base.OnResume();
+            AppState.ShouldPromptBiometric = true;
+        }
+
     }
 }

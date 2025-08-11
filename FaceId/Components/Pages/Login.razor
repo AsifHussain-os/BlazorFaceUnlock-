@@ -6,7 +6,7 @@
 <div class="container">
     @if (isCheckingBiometrics)
     {
-        <span style="text-align:center; color:#666;">Checking biometric login...</span>
+        <span style="text-align:center; color:#666;">Authenticating...</span>
     }
     else
     {
@@ -45,6 +45,22 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Auto check at first load
+        await CheckBiometricsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // If coming back from resume, try again
+        if (!firstRender && AppState.ShouldPromptBiometric)
+        {
+            AppState.ShouldPromptBiometric = false;
+            await CheckBiometricsAsync();
+        }
+    }
+
+    private async Task CheckBiometricsAsync()
+    {
         var biometricEnabled = await Auth.IsBiometricsEnabledAsync();
         if (biometricEnabled)
         {
@@ -57,6 +73,7 @@
         isCheckingBiometrics = true;
         StateHasChanged();
 
+        // This will prompt fingerprint or face automatically depending on device
         var success = await Auth.TryBiometricUnlockAsync();
 
         isCheckingBiometrics = false;
@@ -67,7 +84,7 @@
         }
         else
         {
-            loginMessage = "Biometric authentication failed or cancelled.";
+            loginMessage = "Authentication failed or cancelled.";
             StateHasChanged();
         }
     }
